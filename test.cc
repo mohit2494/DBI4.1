@@ -1,4 +1,4 @@
-#include "y.tab.h"
+// #include "y.tab.h"
 #include <iostream>
 #include <stdlib.h>
 #include "Statistics.h"
@@ -124,7 +124,7 @@ void q0 (){
 void q1 (){
 
 	Statistics s;
-        char *relName[] = {"lineitem"};
+    char *relName[] = {"lineitem"};
 
 	s.AddRel(relName[0],6001215);
 	s.AddAtt(relName[0], "l_returnflag",3);
@@ -180,9 +180,8 @@ void q2 (){
 	
 	double result = s.Estimate(final, relName, 3);
 	if(fabs(result-1500000)>0.1)
-		cout<<"error in estimating Q2\n";
+	cout<<"error in estimating Q2\n";
 	s.Apply(final, relName, 3);
-
 	s.Write(fileName);
 
 	
@@ -195,7 +194,7 @@ void q3 (){
 	Statistics s;
 	char *relName[] = {"supplier","customer","nation"};
 
-	s.Read(fileName);
+	
 	
 	s.AddRel(relName[0],10000);
 	s.AddAtt(relName[0], "s_nationey",25);
@@ -348,7 +347,7 @@ void q6 (){
 	Statistics s;
         char *relName[] = { "partsupp", "supplier", "nation"};
 
-	s.Read(fileName);
+	
 	
 	s.AddRel(relName[0],800000);
 	s.AddAtt(relName[0], "ps_suppkey",10000);
@@ -388,7 +387,7 @@ void q7(){
 	Statistics s;
         char *relName[] = { "orders", "lineitem"};
 
-	s.Read(fileName);
+	
 	
 
 	s.AddRel(relName[0],1500000);
@@ -420,7 +419,7 @@ void q8 (){
 	Statistics s;
         char *relName[] = { "part",  "partsupp"};
 
-	s.Read(fileName);
+	 
 	
 	s.AddRel(relName[0],200000);
 	s.AddAtt(relName[0], "p_partkey",200000);
@@ -487,9 +486,9 @@ void q9(){
 void q10 (){
 
 	Statistics s;
-        char *relName[] = { "customer", "orders", "lineitem","nation"};
+	char *relName[] = { "customer", "orders", "lineitem","nation"};
 
-	s.Read(fileName);
+	 
 	
 	s.AddRel(relName[0],150000);
 	s.AddAtt(relName[0], "c_custkey",150000);
@@ -498,6 +497,7 @@ void q10 (){
 	s.AddRel(relName[1],1500000);
 	s.AddAtt(relName[1], "o_orderkey",1500000);
 	s.AddAtt(relName[1], "o_custkey",150000);
+	s.AddAtt(relName[1], "o_orderdate",150000);
 	
 	s.AddRel(relName[2],6001215);
 	s.AddAtt(relName[2], "l_orderkey",1500000);
@@ -534,7 +534,7 @@ void q11 (){
 	Statistics s;
         char *relName[] = { "part",  "lineitem"};
 
-	s.Read(fileName);
+	
 	
 	s.AddRel(relName[0],200000);
 	s.AddAtt(relName[0], "p_partkey",200000);

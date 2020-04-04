@@ -84,21 +84,21 @@ OrderMaker :: OrderMaker(Schema *schema) {
 
 	// now add in the doubles
 	for (int i = 0; i < n; i++) {
-                if (atts[i].myType == Double) {
-                        whichAtts[numAtts] = i;
-                        whichTypes[numAtts] = Double;
-                        numAtts++;
-                }
-        }
+		if (atts[i].myType == Double) {
+				whichAtts[numAtts] = i;
+				whichTypes[numAtts] = Double;
+				numAtts++;
+		}
+	}
 
 	// and finally the strings
-        for (int i = 0; i < n; i++) {
-                if (atts[i].myType == String) {
-                        whichAtts[numAtts] = i;
-                        whichTypes[numAtts] = String;
-                        numAtts++;
-                }
-        }
+	for (int i = 0; i < n; i++) {
+		if (atts[i].myType == String) {
+				whichAtts[numAtts] = i;
+				whichTypes[numAtts] = String;
+				numAtts++;
+		}
+	}
 }
 
 
@@ -116,6 +116,9 @@ void OrderMaker :: Print () {
 	}
 }
 
+int OrderMaker::getNumAtts() {
+	return numAtts;
+}
 
 int CNF :: GetSortOrders (OrderMaker &left, OrderMaker &right) {
 
@@ -612,4 +615,93 @@ void CNF :: GrowFromParseTree (struct AndList *parseTree, Schema *mySchema,
 	remove("hkljdfgkSDFSDF");
 }
 
+
+
+int CNF::GetSortOrdersCopy(OrderMaker& left, OrderMaker& right)
+{
+      // initialize the size of the OrderMakers
+        left.numAtts = 0;
+        right.numAtts = 0;
+
+        // loop through all of the disjunctions in the CNF and find those
+        // that are acceptable for use in a sort ordering
+        for (int i = 0; i < numAnds; i++) {
+
+                // if we don't have a disjunction of length one, then it
+                // can't be acceptable for use with a sort ordering
+                if (orLens[i] != 1) {
+                        continue;
+                }
+                // made it this far, so first verify that it is an equality check
+                if (orList[i][0].op != Equals) {
+                        continue;
+                }
+                // now verify that it operates over atts from both tables
+                if (!((orList[i][0].operand1 == Left && orList[i][0].operand2 == Right) ||
+                      (orList[i][0].operand2 == Left && orList[i][0].operand1 == Right))) {
+//                      continue;
+                }
+                // since we are here, we have found a join attribute!!!
+                // so all we need to do is add the new comparison info into the
+                // relevant structures
+                if (orList[i][0].operand1 == Left) {
+                        left.whichAtts[left.numAtts] = orList[i][0].whichAtt1;
+                        left.whichTypes[left.numAtts] = orList[i][0].attType;
+                        right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
+                        right.whichTypes[right.numAtts] = orList[i][0].attType;
+                }
+                if (orList[i][0].operand1 == Right) {
+                        right.whichAtts[right.numAtts] = orList[i][0].whichAtt1;
+                        right.whichTypes[right.numAtts] = orList[i][0].attType;
+                }
+                if (orList[i][0].operand2 == Left) {
+                        left.whichAtts[left.numAtts] = orList[i][0].whichAtt2;
+                        left.whichTypes[left.numAtts] = orList[i][0].attType;
+                }
+
+                if (orList[i][0].operand2 == Right) {
+                        right.whichAtts[right.numAtts] = orList[i][0].whichAtt2;
+                        right.whichTypes[right.numAtts] = orList[i][0].attType;
+                }
+
+                // note that we have found two new attributes
+                left.numAtts++;
+                right.numAtts++;
+        }
+
+        return left.numAtts;
+}
+
+OrderMaker* CNF::GetQueryOrderMaker(OrderMaker &sortOrderMaker){
+
+    OrderMaker cnfOrderMaker;
+    OrderMaker sortOrderCopy = sortOrderMaker;
+    GetSortOrdersCopy(cnfOrderMaker, sortOrderCopy);
+    OrderMaker *query = new OrderMaker();
+    for (int i = 0; i < sortOrderMaker.numAtts; i++)
+    {
+        bool flag = false;
+        for(int j = 0; j < cnfOrderMaker.numAtts; j++)
+        {
+            if((sortOrderMaker.whichAtts[i] == cnfOrderMaker.whichAtts[j]) && (sortOrderMaker.whichTypes[i] == cnfOrderMaker.whichTypes[j]))
+            {
+                flag = true;
+                query->whichAtts[query->numAtts] = sortOrderCopy.whichAtts[j];
+                query->whichTypes[query->numAtts] = sortOrderCopy.whichTypes[j];
+                query->numAtts++;
+                break;
+            }
+        }
+        if(!flag)
+            break;
+    }
+    if(query->numAtts > 0)
+        return query;
+    else
+    {
+        delete query;
+        return NULL;
+    }
+
+}
 
