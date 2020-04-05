@@ -42,5 +42,18 @@ public:
             return &dbStats;
         }
 
+    bool ErrorCheck(struct AndList *parseTree, char *relNames[], int numToJoin,map<string,long> &uniqvallist);
+    bool ContainsAttrib(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist);
+    void Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
+    double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
+    double Evaluate(struct OrList *orList, map<string,long> &uniqvallist);
+    void printRelsAtts();
+   
+    //getter methods
+    map<string,TableStats*>* GetDbStats()
+    {
+        return &dbStats;
+    }
+
 };
 #endif
