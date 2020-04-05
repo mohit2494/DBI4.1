@@ -6,21 +6,21 @@ Statistics::Statistics()
 
 Statistics::Statistics(Statistics &copyMe)
 {
-    map<string,TableStats*> *ptr = copyMe.GetDbStats();
-    map<string,TableStats*>::iterator itr;
-    TableStats *tbptr;
+    map<string,RelStats*> *ptr = copyMe.GetDbStats();
+    map<string,RelStats*>::iterator itr;
+    RelStats *tbptr;
     //Iterate over the CopyMe HashMap and copy it over
     for(itr=ptr->begin();itr!=ptr->end();itr++)
-    {        
-        tbptr=new TableStats(*itr->second);
+    {
+        tbptr=new RelStats(*itr->second);
         dbStats[itr->first] = tbptr;
     }
 }
 
 Statistics::~Statistics()
 {
-    map<string,TableStats*>::iterator itr;
-    TableStats *tb=NULL;
+    map<string,RelStats*>::iterator itr;
+    RelStats *tb=NULL;
     //Iterate over the HashMap and delete the tablestat objects and then clear the HashMap
     for(itr=dbStats.begin();itr!=dbStats.end();itr++)
     {
@@ -35,8 +35,8 @@ void Statistics::AddRel(char *relName, int numTuples)
 {
  /*Logic:
   If the HashMap contains the relation, update the no of tuples, otherwise add new entry*/
-    map<string,TableStats*>::iterator itr;
-    TableStats *tbptr;
+    map<string,RelStats*>::iterator itr;
+    RelStats *tbptr;
     itr = dbStats.find(string(relName));
     if(itr!=dbStats.end())
     {
@@ -45,7 +45,7 @@ void Statistics::AddRel(char *relName, int numTuples)
     }
     else
     {
-        tbptr= new TableStats(numTuples,string(relName));
+        tbptr= new RelStats(numTuples,string(relName));
         dbStats[string(relName)]=tbptr;
     }
 }
@@ -53,19 +53,19 @@ void Statistics::AddRel(char *relName, int numTuples)
 void Statistics::AddAtt(char *relName, char *attName, int numDistincts)
 {
 /*Logic:
-  If the HashMap contains the relation, update the attribs in TableStats, otherwise report error*/
-  map<string,TableStats*>::iterator itr;
+  If the HashMap contains the relation, update the attribs in RelStats, otherwise report error*/
+  map<string,RelStats*>::iterator itr;
   itr = dbStats.find(string(relName));
   if(itr!=dbStats.end())
   {
       dbStats[string(relName)]->UpdateData(string(attName),numDistincts);
-  }  
+  }
 }
 
 #ifdef debug
 void Statistics::printRelsAtts()
 {
-    map<string,TableStats*>::iterator relitr=dbStats.begin();
+    map<string,RelStats*>::iterator relitr=dbStats.begin();
     for(;relitr!=dbStats.end();relitr++)
     {
         cout<<"\n"<<relitr->first<<" "<<relitr->second->GetTupleCount()<<" "<<relitr->second->GetGrpName();
@@ -87,7 +87,7 @@ void Statistics::CopyRel(char *oldName, char *newName)
   string newRel=string(newName);
   if(strcmp(oldName,newName)==0)  return;
 
-  map<string,TableStats*>::iterator itr2;
+  map<string,RelStats*>::iterator itr2;
   itr2 = dbStats.find(newRel);
   if(itr2!=dbStats.end())
   {
@@ -95,17 +95,17 @@ void Statistics::CopyRel(char *oldName, char *newName)
       string temp=itr2->first;
       itr2++;
       dbStats.erase(temp);
-      
+
   }
 
-  map<string,TableStats*>::iterator itr;
+  map<string,RelStats*>::iterator itr;
 
   itr = dbStats.find(oldRel);
-  TableStats *tbptr;
-  
+  RelStats *tbptr;
+
   if(itr!=dbStats.end())
   {
-      TableStats* newTable=new TableStats(dbStats[string(oldName)]->GetTupleCount(),newRel);
+      RelStats* newTable=new RelStats(dbStats[string(oldName)]->GetTupleCount(),newRel);
       tbptr=dbStats[oldRel];
       map<string,int>::iterator tableiter=tbptr->GetTableAtts()->begin();
       for(;tableiter!=tbptr->GetTableAtts()->end();tableiter++)
@@ -131,7 +131,7 @@ void Statistics::Read(char *fromWhere)
      */
     FILE *fptr=NULL;
     fptr = fopen(fromWhere,"r");
-    char strRead[200];    
+    char strRead[200];
     while(fptr!=NULL && fscanf(fptr,"%s",strRead)!=EOF)
     {
         if(strcmp(strRead,"BEGIN")==0)
@@ -140,19 +140,19 @@ void Statistics::Read(char *fromWhere)
             char relname[200];
             int grpcnt=0;
             char groupname[200];
-            fscanf(fptr,"%s %ld %s %d",relname,&tuplecnt,groupname,&grpcnt);                   
+            fscanf(fptr,"%s %ld %s %d",relname,&tuplecnt,groupname,&grpcnt);
             AddRel(relname,tuplecnt);
             dbStats[string(relname)]->SetGroupDetails(groupname,grpcnt);
             char attname[200];
             int distcnt=0;
-            fscanf(fptr,"%s",attname);            
+            fscanf(fptr,"%s",attname);
             while(strcmp(attname,"END")!=0)
             {
                 fscanf(fptr,"%d",&distcnt);
-                AddAtt(relname,attname,distcnt);                
-                fscanf(fptr,"%s",attname);                                                                
-            }                                                
-        }                
+                AddAtt(relname,attname,distcnt);
+                fscanf(fptr,"%s",attname);
+            }
+        }
     }
 }
 
@@ -162,29 +162,29 @@ void Statistics::Write(char *fromWhere)
      Iterate over the dBStats HashMaps, for each entry(relation) iterate over
      attribs HashMaps to print the numOfTuples, and numOfDistinctValues respectivily
      */
-    
-     map<string,TableStats*>::iterator dbitr;
+
+     map<string,RelStats*>::iterator dbitr;
      map<string,int>::iterator tbitr;
      map<string,int> *attrptr;
 
      FILE *fptr;
      fptr = fopen(fromWhere,"w");
      dbitr = dbStats.begin();
-     
+
      for(;dbitr!=dbStats.end();dbitr++)
      {
          fprintf(fptr,"BEGIN\n");
          fprintf(fptr,"%s %ld %s %d\n",dbitr->first.c_str(),dbitr->second->GetTupleCount(),dbitr->second->GetGrpName().c_str(),dbitr->second->GetGrpSize());
          attrptr = dbitr->second->GetTableAtts();
          tbitr = attrptr->begin();
-         
+
          for(;tbitr!=attrptr->end();tbitr++)
          {
             fprintf(fptr,"%s %d\n",tbitr->first.c_str(),tbitr->second);
-         }         
-         fprintf(fptr,"END\n");      
+         }
+         fprintf(fptr,"END\n");
      }
-     fclose(fptr);     
+     fclose(fptr);
 }
 
 void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin)
@@ -201,7 +201,7 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
   {
       grpName = grpName + "," + relNames[i];
   }
-  map<string,TableStats*>::iterator itr = dbStats.begin();
+  map<string,RelStats*>::iterator itr = dbStats.begin();
   for(int i=0;i<numToJoin;i++)
   {
       dbStats[relNames[i]]->SetGroupDetails(grpName,grpSize);
@@ -217,7 +217,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
      * For each node of AND LIST which is OR LIST evaluate the Selectivity.
      * Do Product of all Selectivities and multiply result with the Tuple product of relations
      */
-    
+
     double estTuples=1;
     map<string,long> uniqvallist;
     if(!ErrorCheck(parseTree,relNames,numToJoin,uniqvallist))
@@ -239,7 +239,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
       {
           tuplevals[dbStats[relNames[i]]->GetGrpName()]=dbStats[relNames[i]]->GetTupleCount();
       }
-      
+
       estTuples = 1000.0; //Safety purpose so that we dont go out of Double precision
       /*long long int tupleproduct=1;
       for(;tupitr!=tuplevals.end();tupitr++)
@@ -286,7 +286,7 @@ double Statistics::Evaluate(struct OrList *orList, map<string,long> &uniqvallist
         }
         else
         {
-            string ulkey = string(comp->left->value);            
+            string ulkey = string(comp->left->value);
             long max=uniqvallist[ulkey];
             if(comp->right->code==4)
             {
@@ -326,7 +326,7 @@ bool Statistics::ErrorCheck(struct AndList *parseTree, char *relNames[], int num
           {
               cout<<"\n"<< ptr->left->value<<" Does Not Exist";
               result=false;
-          }          
+          }
          if(ptr->right->code==4 && ptr->code==3 && !ContainsAttrib(ptr->right->value,relNames,numToJoin,uniqvallist))
               result=false;
        head=head->rightOr;
@@ -357,10 +357,10 @@ bool Statistics::ErrorCheck(struct AndList *parseTree, char *relNames[], int num
 
 bool Statistics::ContainsAttrib(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist)
 {
-    int i=0;    
+    int i=0;
     while(i<numToJoin)
     {
-    map<string,TableStats*>::iterator itr=dbStats.find(relNames[i]);    
+    map<string,RelStats*>::iterator itr=dbStats.find(relNames[i]);
     if(itr!=dbStats.end())
      {
         string key = string(value);
