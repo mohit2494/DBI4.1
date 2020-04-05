@@ -31,6 +31,7 @@ END
 BEGIN
 orders 400081 ,customer,orders,lineitem 3
 o_custkey 150000
+o_orderdate 99996
 o_orderkey 1500000
 END
 ***************************************************************************************************************************************
@@ -50,19 +51,19 @@ END
 BEGIN
 orders 2000405 ,customer,orders,lineitem,nation 4
 o_custkey 150000
-o_orderdate 150000
+o_orderdate 99996
 o_orderkey 1500000
 END
 ***************************************************************************************************************************************
 BEGIN
-lineitem -1 ,part,lineitem 2
+lineitem 21433 ,part,lineitem 2
 l_partkey 200000
 l_shipinstruct 4
 l_shipmode 7
 END
 BEGIN
-part -1 ,part,lineitem 2
-p_conatiner 40
+part 21433 ,part,lineitem 2
+p_container 40
 p_partkey 200000
 END
 ***************************************************************************************************************************************
