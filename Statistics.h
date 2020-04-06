@@ -22,8 +22,8 @@ public:
     void CopyRel(char *oldName, char *newName);
     void Read(char *fromWhere);
     void Write(char *fromWhere);
-    bool ErrorCheck(struct AndList *parseTree, char *relNames[], int numToJoin,map<string,long> &uniqvallist);
-    bool ContainsAttrib(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist);
+    bool checkParseTreeAndPartition(struct AndList *parseTree, char *relNames[], int numToJoin,map<string,long> &uniqvallist);
+    bool CheckForAttribute(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist);
     void Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
     double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
     double Evaluate(struct OrList *orList, map<string,long> &uniqvallist);
