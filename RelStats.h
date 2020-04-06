@@ -1,8 +1,12 @@
 #ifndef RELATIONSTATS_
 #define RELATIONSTATS_
-#include "ParseTree.h"
 #include <map>
 #include <string.h>
+#include <iostream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
 using namespace std;
 class RelStats{
     
@@ -12,16 +16,16 @@ class RelStats{
     map<string,int> attributeMap;
 public:
     RelStats(int numTuples, string relName){
-        this.noOfTuples = numTuples;
-        this.groupName = relName;
-        this.groupSize = 1;
+        this->noOfTuples = numTuples;
+        this->groupName = relName;
+        this->groupSize = 1;
     }
     ~RelStats(){
         attributeMap.clear();
     }
     
     RelStats(RelStats &copyMe){
-        this.noOfTuples = copyMe.GetNofTuples();
+        this->noOfTuples = copyMe.GetNofTuples();
         map<string,int> * ptr = copyMe.GetRelationAttributes();
         map<string,int>::iterator itr;
         
@@ -29,16 +33,16 @@ public:
         {
             attributeMap[itr->first] = itr->second;
         }
-        this.groupSize = copyMe.getGroupSize();
-        this.groupName = copyMe.getGroupName();
+        this->groupSize = copyMe.GetGroupSize();
+        this->groupName = copyMe.GetGroupName();
     }
         
 //   Getter Functions
-    string getGroupName()
+    string GetGroupName()
     {
         return groupName;
     }
-    int getGroupSize()
+    int GetGroupSize()
     {
         return groupSize;
     }
@@ -54,22 +58,22 @@ public:
 // Setter Functions
     void UpdateNoOfTuples(int numTuples)
     {
-        this.noOfTuples = numTuples;
+        this->noOfTuples = numTuples;
     }
 
     void UpdateAttributes(string attName,int numDistincts)
     {   if (numDistincts == -1){
             numDistincts = noOfTuples;
         }
-        this.attributeMap[attName] = numDistincts;
+        this->attributeMap[attName] = numDistincts;
     }
     
     void UpdateGroup(string groupName,int groupCount)
     {
-        this.groupName = groupName;
-        this.groupSize = groupCount;
+        this->groupName = groupName;
+        this->groupSize = groupCount;
     }
     
-}
+};  
 
 #endif

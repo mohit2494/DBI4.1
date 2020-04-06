@@ -24,7 +24,7 @@ map<string,RelStats*>* Statistics::GetStatsMap()
 
 Statistics::Statistics(Statistics &copyMe)
 {
-    map<string,RelStats*> * ptr = copyMe.GetDbStats();
+    map<string,RelStats*> * ptr = copyMe.GetStatsMap();
     map<string,RelStats*>::iterator itr;
     RelStats * rel;
     for(itr=ptr->begin(); itr!=ptr->end(); itr++)
@@ -48,7 +48,7 @@ void Statistics::AddRel(char *relName, int numTuples)
     }
     else{
         statsMap[string(relName)]->UpdateNoOfTuples(numTuples);
-        statsMap[string(relName)]->SetGroupDetails(relName,1);
+        statsMap[string(relName)]->UpdateGroup(relName,1);
     }
 }
 
@@ -70,9 +70,9 @@ void Statistics::printRelsAtts()
     map<string,RelStats*>::iterator relitr=statsMap.begin();
     for(;relitr!=statsMap.end();relitr++)
     {
-        cout<<"\n"<<relitr->first<<" "<<relitr->second->GetTupleCount()<<" "<<relitr->second->GetGrpName();
-        map<string,int>::iterator tableitr=relitr->second->GetTableAtts()->begin();
-        for(;tableitr!=relitr->second->GetTableAtts()->end();tableitr++)
+        cout<<"\n"<<relitr->first<<" "<<relitr->second->GetNofTuples()<<" "<<relitr->second->GetGroupName();
+        map<string,int>::iterator tableitr=relitr->second->GetRelationAttributes()->begin();
+        for(;tableitr!=relitr->second->GetRelationAttributes()->end();tableitr++)
         {
             cout<<"\n"<<tableitr->first<<":"<<tableitr->second;
         }
@@ -112,7 +112,7 @@ void Statistics::CopyRel(char *oldName, char *newName)
       RelStats* nRel=new RelStats(oRel->GetNofTuples(),newRel);
       
       map<string,int>::iterator attritr;
-      for(attritr = oRel->GetRelationAttributes()->begin(); attritr!=rel->GetRelationAttributes()->end();attritr++)
+      for(attritr = oRel->GetRelationAttributes()->begin(); attritr!=oRel->GetRelationAttributes()->end();attritr++)
       {
           string s = newRel + "." + attritr->first;
           nRel->UpdateAttributes(s,attritr->second);
@@ -135,13 +135,13 @@ void Statistics::Read(char *fromWhere)
     {
         if(strcmp(strRead,"BEGIN")==0)
         {
-            int tuplecnt=0;
+            long tuplecnt=0;
             char relname[200];
             int grpcnt=0;
             char groupname[200];
             fscanf(fptr,"%s %ld %s %d",relname,&tuplecnt,groupname,&grpcnt);
             AddRel(relname,tuplecnt);
-            statsMap[string(relname)]->SetGroupDetails(groupname,grpcnt);
+            statsMap[string(relname)]->UpdateGroup(groupname,grpcnt);
             char attname[200];
             int distcnt=0;
             fscanf(fptr,"%s",attname);
@@ -173,8 +173,8 @@ void Statistics::Write(char *fromWhere)
      for(;dbitr!=statsMap.end();dbitr++)
      {
          fprintf(fptr,"BEGIN\n");
-         fprintf(fptr,"%s %ld %s %d\n",dbitr->first.c_str(),dbitr->second->GetTupleCount(),dbitr->second->GetGrpName().c_str(),dbitr->second->GetGrpSize());
-         attrptr = dbitr->second->GetTableAtts();
+         fprintf(fptr,"%s %ld %s %d\n",dbitr->first.c_str(),dbitr->second->GetNofTuples(),dbitr->second->GetGroupName().c_str(),dbitr->second->GetGroupSize());
+         attrptr = dbitr->second->GetRelationAttributes();
          tbitr = attrptr->begin();
 
          for(;tbitr!=attrptr->end();tbitr++)
@@ -203,8 +203,8 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
   map<string,RelStats*>::iterator itr = statsMap.begin();
   for(int i=0;i<numToJoin;i++)
   {
-      statsMap[relNames[i]]->SetGroupDetails(grpName,grpSize);
-      statsMap[relNames[i]]->UpdateData(result);
+      statsMap[relNames[i]]->UpdateGroup(grpName,grpSize);
+      statsMap[relNames[i]]->UpdateNoOfTuples(result);
   }
 }
 
@@ -236,7 +236,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
       }
       for(int i=0;i<numToJoin;i++)
       {
-          tuplevals[statsMap[relNames[i]]->GetGrpName()]=statsMap[relNames[i]]->GetTupleCount();
+          tuplevals[statsMap[relNames[i]]->GetGroupName()]=statsMap[relNames[i]]->GetNofTuples();
       }
 
       estTuples = 1000.0; //Safety purpose so that we dont go out of Double precision
@@ -337,11 +337,11 @@ bool Statistics::ErrorCheck(struct AndList *parseTree, char *relNames[], int num
   map<string,int> tmpTable;
   for(int i=0;i<numToJoin;i++)
   {
-      string grpname = statsMap[string(relNames[i])]->GetGrpName();
+      string grpname = statsMap[string(relNames[i])]->GetGroupName();
       if(tmpTable.find(grpname)!=tmpTable.end())
           tmpTable[grpname]--;
       else
-          tmpTable[grpname] = statsMap[string(relNames[i])]->GetGrpSize()-1;
+          tmpTable[grpname] = statsMap[string(relNames[i])]->GetGroupSize()-1;
   }
 
   map<string,int>::iterator tmpTableItr = tmpTable.begin();
@@ -363,9 +363,9 @@ bool Statistics::ContainsAttrib(char *value,char *relNames[], int numToJoin,map<
     if(itr!=statsMap.end())
      {
         string key = string(value);
-        if(itr->second->GetTableAtts()->find(key)!=itr->second->GetTableAtts()->end())
+        if(itr->second->GetRelationAttributes()->find(key)!=itr->second->GetRelationAttributes()->end())
         {
-            uniqvallist[key]=itr->second->GetTableAtts()->find(key)->second;
+            uniqvallist[key]=itr->second->GetRelationAttributes()->find(key)->second;
             return true;
         }
      }

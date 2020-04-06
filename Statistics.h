@@ -2,12 +2,7 @@
 #define STATISTICS_
 #include "ParseTree.h"
 #include "RelStats.h"
-#include <map>
-#include <string.h>
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+
 
 using namespace std;
 
