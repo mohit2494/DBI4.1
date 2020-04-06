@@ -210,8 +210,8 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
      */
 
     double estTuples=1;
-    map<string,long> uniqvallist;
-    if(!checkParseTreeAndPartition(parseTree,relNames,numToJoin,uniqvallist))
+    map<string,long> uniqueValueList;
+    if(!checkParseTreeAndPartition(parseTree,relNames,numToJoin,uniqueValueList))
     {
       cout<<"\nClass:Statistics Method:Estimate Msg:Input Parameters invalid for Estimation";
       return -1.0;
@@ -239,7 +239,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
       }*/
      while(parseTree!=NULL)
      {
-         estTuples*=Evaluate(parseTree->left,uniqvallist);
+         estTuples*=EstimateTuples(parseTree->left,uniqueValueList);
          parseTree=parseTree->rightAnd;
      }
       tupitr=tuplevals.begin();
@@ -253,7 +253,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
     return estTuples;
 }
 
-double Statistics::Evaluate(struct OrList *orList, map<string,long> &uniqvallist)
+double Statistics::EstimateTuples(struct OrList *orList, map<string,long> &uniqueValueList)
 {
 
     struct ComparisonOp *comp;
@@ -274,12 +274,12 @@ double Statistics::Evaluate(struct OrList *orList, map<string,long> &uniqvallist
         else
         {
             string leftKeyVal = string(comp->left->value);
-            long max_val = uniqvallist[leftKeyVal];
+            long max_val = uniqueValueList[leftKeyVal];
             if(comp->right->code==NAME)
             {
                string rightKeyVal = string(comp->right->value);
-               if(max_val<uniqvallist[rightKeyVal])
-                   max_val = uniqvallist[rightKeyVal];
+               if(max_val<uniqueValueList[rightKeyVal])
+                   max_val = uniqueValueList[rightKeyVal];
             }
             selectionMap[key] =selectionMap[key] + 1.0/max_val;
         }
@@ -300,19 +300,16 @@ bool Statistics::CheckForAttribute(char *v,char *relationNames[], int numberOfJo
     while(i<numberOfJoinAttributes)
     {
         map<string,RelStats*>::iterator itr=statsMap.find(relationNames[i]);
-        // if stats are not empty
         if(itr!=statsMap.end())
         {
             string relation = string(v);
             if(itr->second->GetRelationAttributes()->find(relation)!=itr->second->GetRelationAttributes()->end())
             {
-                // update value in uniqueValueList
                 uniqueValueList[relation]=itr->second->GetRelationAttributes()->find(relation)->second;
                 return true;
             }
         }
         else {
-            // empty stats
             return false;
         }
         i++;
@@ -324,23 +321,16 @@ bool Statistics::CheckForAttribute(char *v,char *relationNames[], int numberOfJo
 
 bool Statistics::checkParseTreeAndPartition(struct AndList *tree, char *relationNames[], int numberOfAttributesJoin,map<string,long> &uniqueValueList)
 {
-    // boolean for return value
     bool returnValue=true;
 
-    // while tree is not parsed and returnValue is not false
     while(tree!=NULL && returnValue)
     {
-        // get the left most orList of parse tree
         struct OrList *orListTop=tree->left;
 
-        // traverse the orList until it becomes null and returnValue is not false
         while(orListTop!=NULL && returnValue)
         {
-            // get pointer to the comparison operator
             struct ComparisonOp *cmpPtr = orListTop->left;
 
-            // left of comparison operator should be an attribute and right should be a string
-            // check whether the attributes used belong to the relations listed in relationNames
             if(!CheckForAttribute(cmpPtr->left->value,relationNames,numberOfAttributesJoin,uniqueValueList)
                 && cmpPtr->left->code==NAME
                 && cmpPtr->code==STRING) {
@@ -348,24 +338,18 @@ bool Statistics::checkParseTreeAndPartition(struct AndList *tree, char *relation
                 returnValue=false;
             }
 
-            // left of comparison operator should be an attribute and right should be a string
-            // check whether the attributes used belong to the relations listed in relationNames
             if(!CheckForAttribute(cmpPtr->right->value,relationNames,numberOfAttributesJoin,uniqueValueList)
                 && cmpPtr->right->code==NAME
                 && cmpPtr->code==STRING) {
                 returnValue=false;
             }
-            // now move to the right OR after we've seen the left one and keep moving until the end
             orListTop=orListTop->rightOr;
         }
-        // after the OR parsing is complete, we'll now go to the right OR until the ANDs end
         tree=tree->rightAnd;
     }
 
-    // if false, return
     if(!returnValue) return returnValue;
 
-    // for number of
     map<string,int> tbl;
     for(int i=0;i<numberOfAttributesJoin;i++)
     {

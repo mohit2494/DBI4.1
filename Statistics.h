@@ -26,7 +26,7 @@ public:
     bool CheckForAttribute(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist);
     void Apply(struct AndList *parseTree, char *relNames[], int numToJoin);
     double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
-    double Evaluate(struct OrList *orList, map<string,long> &uniqvallist);
+    double EstimateTuples(struct OrList *orList, map<string,long> &uniqvallist);
     void printRelsAtts();
 };
 #endif
