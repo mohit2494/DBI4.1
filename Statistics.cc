@@ -257,40 +257,39 @@ double Statistics::Evaluate(struct OrList *orList, map<string,long> &uniqvallist
 {
     
     struct ComparisonOp *comp;
-    map<string,double> attribSelectivity;
+    map<string,double> selectionMap;
 
     while(orList!=NULL)
     {
         comp=orList->left;
         string key = string(comp->left->value);
-        if(attribSelectivity.find(key)==attribSelectivity.end())
+        if(selectionMap.find(key)==selectionMap.end())
         {
-            attribSelectivity[key]=0.0;
+            selectionMap[key]=0.0;
         }
-        if(comp->code==1 || comp->code==2)
+        if(comp->code == LESS_THAN || comp->code == GREATER_THAN)
         {
-            attribSelectivity[key] = attribSelectivity[key]+1.0/3;
+            selectionMap[key] = selectionMap[key]+1.0/3;
         }
         else
         {
-            string ulkey = string(comp->left->value);
-            long max=uniqvallist[ulkey];
-            if(comp->right->code==4)
+            string leftKeyVal = string(comp->left->value);
+            long max_val = uniqvallist[leftKeyVal];
+            if(comp->right->code==NAME)
             {
-               string urkey = string(comp->right->value);
-               if(max<uniqvallist[urkey])
-                   max = uniqvallist[urkey];
+               string rightKeyVal = string(comp->right->value);
+               if(max_val<uniqvallist[rightKeyVal])
+                   max_val = uniqvallist[rightKeyVal];
             }
-            attribSelectivity[key] =attribSelectivity[key] + 1.0/max;
+            selectionMap[key] =selectionMap[key] + 1.0/max_val;
         }
         orList=orList->rightOr;
     }
 
     double selectivity=1.0;
-    map<string,double>::iterator itr = attribSelectivity.begin();
-    for(;itr!=attribSelectivity.end();itr++)
+    map<string,double>::iterator itr = selectionMap.begin();
+    for(;itr!=selectionMap.end();itr++)
         selectivity*=(1.0-itr->second);
-   // cout<<"\n selectivity"<<1.0-selectivity;
     return (1.0-selectivity);
 }
 
