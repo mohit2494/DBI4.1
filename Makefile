@@ -10,7 +10,7 @@ main: Record.o Comparison.o ComparisonEngine.o Schema.o File.o Pipe.o BigQ.o DBF
 	$(CC) -o main Record.o Comparison.o ComparisonEngine.o Schema.o File.o Pipe.o BigQ.o DBFile.o Statistics.o y.tab.o lex.yy.o test.o -ll -lpthread
 
 a4-1.out: Record.o Comparison.o ComparisonEngine.o Schema.o File.o Pipe.o BigQ.o DBFile.o Statistics.o y.tab.o lex.yy.o test.o
-	$(CC) -o a4-1.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o Pipe.o BigQ.o DBFile.o Statistics.o y.tab.o lex.yy.o test.o -lfl -lpthread
+	$(CC) -o a4-1.out Record.o Comparison.o ComparisonEngine.o Schema.o File.o Pipe.o BigQ.o DBFile.o Statistics.o y.tab.o lex.yy.o test.o -ll -lpthread
 
 test.o: test.cc
 	$(CC) -g -c test.cc

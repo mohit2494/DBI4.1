@@ -82,9 +82,6 @@ void Statistics::printRelsAtts()
 
 void Statistics::CopyRel(char *oldName, char *newName)
 {
-  /*Logic:
-  If the HashMap contains the old relation, copy it over to the new Relation and insert new relation into statsMap
-  Else report error*/
   string oldRel=string(oldName);
   string newRel=string(newName);
     
@@ -130,26 +127,26 @@ void Statistics::Read(char *fromWhere)
 {
     FILE *fptr=NULL;
     fptr = fopen(fromWhere,"r");
-    char strRead[200];
-    while(fptr!=NULL && fscanf(fptr,"%s",strRead)!=EOF)
+    char buffer[200];
+    while(fptr!=NULL && fscanf(fptr,"%s",buffer)!=EOF)
     {
-        if(strcmp(strRead,"BEGIN")==0)
+        if(strcmp(buffer,"BEGIN")==0)
         {
-            long tuplecnt=0;
-            char relname[200];
-            int grpcnt=0;
-            char groupname[200];
-            fscanf(fptr,"%s %ld %s %d",relname,&tuplecnt,groupname,&grpcnt);
-            AddRel(relname,tuplecnt);
-            statsMap[string(relname)]->UpdateGroup(groupname,grpcnt);
-            char attname[200];
-            int distcnt=0;
-            fscanf(fptr,"%s",attname);
-            while(strcmp(attname,"END")!=0)
+            long numTuples=0;
+            char relName[200];
+            int groupCount=0;
+            char groupName[200];
+            fscanf(fptr,"%s %ld %s %d",relName,&numTuples,groupName,&groupCount);
+            AddRel(relName  ,numTuples);
+            statsMap[string(relName)]->UpdateGroup(groupName,groupCount);
+            char attName[200];
+            int numDistincts=0;
+            fscanf(fptr,"%s",attName);
+            while(strcmp(attName,"END")!=0)
             {
-                fscanf(fptr,"%d",&distcnt);
-                AddAtt(relname,attname,distcnt);
-                fscanf(fptr,"%s",attname);
+                fscanf(fptr,"%d",&numDistincts);
+                AddAtt(relName,attName,numDistincts);
+                fscanf(fptr,"%s",attName);
             }
         }
     }
@@ -188,23 +185,18 @@ void Statistics::Write(char *fromWhere)
 
 void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin)
 {
- /*
-  Call Estimate , round the result and store in the statistics object;
-  */
   double r = Estimate(parseTree,relNames,numToJoin);
-
-  long result =(long)((r-floor(r))>=0.5?ceil(r):floor(r));
-  string grpName="";
-  int grpSize = numToJoin;
-  for(int i=0;i<grpSize;i++)
+  long numTuples =(long)((r-floor(r))>=0.5?ceil(r):floor(r));
+  string groupName="";
+  int groupSize = numToJoin;
+  for(int i=0;i<groupSize;i++)
   {
-      grpName = grpName + "," + relNames[i];
+      groupName = groupName + "," + relNames[i];
   }
-  map<string,RelStats*>::iterator itr = statsMap.begin();
   for(int i=0;i<numToJoin;i++)
   {
-      statsMap[relNames[i]]->UpdateGroup(grpName,grpSize);
-      statsMap[relNames[i]]->UpdateNoOfTuples(result);
+      statsMap[relNames[i]]->UpdateGroup(groupName,groupSize);
+      statsMap[relNames[i]]->UpdateNoOfTuples(numTuples);
   }
 }
 
@@ -263,11 +255,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
 
 double Statistics::Evaluate(struct OrList *orList, map<string,long> &uniqvallist)
 {
-    /*Logic:
-     * Rules:
-     * </> 1/3
-     * = 1/Max(noOfDistinct(R1,A1),noOfDistinct(R2,A2)) , where A1,A2 are join attribs
-     */
+    
     struct ComparisonOp *comp;
     map<string,double> attribSelectivity;
 
