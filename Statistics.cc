@@ -200,57 +200,45 @@ void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJo
   }
 }
 
-double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin)
+double Statistics::Estimate(struct AndList *tree, char **relationNames, int numToJoin)
 {
-    /* Logic:
-     * Check validity of input parameters
-     * Loop throught the AND LIST.
-     * For each node of AND LIST which is OR LIST evaluate the Selectivity.
-     * Do Product of all Selectivities and multiply result with the Tuple product of relations
-     */
-
-    double estTuples=1;
+    double et=1;
     map<string,long> uniqueValueList;
-    if(!checkParseTreeAndPartition(parseTree,relNames,numToJoin,uniqueValueList))
+    if(!checkParseTreeAndPartition(tree,relationNames,numToJoin,uniqueValueList))
     {
-      cout<<"\nClass:Statistics Method:Estimate Msg:Input Parameters invalid for Estimation";
-      return -1.0;
-  }
-  else
-  {
-      string grpName="";
-      map<string,long>::iterator tupitr;
-      map<string,long> tuplevals;
-      int grpSize = numToJoin;
-      for(int i=0;i<grpSize;i++)
-      {
-          grpName = grpName + "," + relNames[i];
-      }
-      for(int i=0;i<numToJoin;i++)
-      {
-          tuplevals[statsMap[relNames[i]]->GetGroupName()]=statsMap[relNames[i]]->GetNofTuples();
-      }
+        cout<<"\n invalid parameters passed";
+        return -1.0;
+    }
+    else
+    {
+        string gname="";
+        map<string,long> tval;
+        map<string,long>::iterator ti;
+      
+        int grpSize = numToJoin;
+        for(int i=0;i<grpSize;i++)
+        {
+            gname = gname + "," + relationNames[i];
+        }
+        for(int i=0;i<numToJoin;i++)
+        {
+            tval[statsMap[relationNames[i]]->GetGroupName()]=statsMap[relationNames[i]]->GetNofTuples();
+        }
 
-      estTuples = 1000.0; //Safety purpose so that we dont go out of Double precision
-      /*long long int tupleproduct=1;
-      for(;tupitr!=tuplevals.end();tupitr++)
-      {
-          tupleproduct*=tupitr->second;
-      }*/
-     while(parseTree!=NULL)
-     {
-         estTuples*=EstimateTuples(parseTree->left,uniqueValueList);
-         parseTree=parseTree->rightAnd;
-     }
-      tupitr=tuplevals.begin();
-      for(;tupitr!=tuplevals.end();tupitr++)
-      {
-          estTuples*=tupitr->second;
-      }
-      //estTuples = estTuples*tupleproduct;
-  }
-    estTuples = estTuples/1000.0; //Safety purpose so that we dont go out of Double precision-revert
-    return estTuples;
+        et = 1000.0;
+        while(tree!=NULL)
+        {
+            et*=EstimateTuples(tree->left,uniqueValueList);
+            tree=tree->rightAnd;
+        }
+        ti=tval.begin();
+        for(;ti!=tval.end();ti++)
+        {
+            et*=ti->second;
+        }
+    }
+    et = et/1000.0;
+    return et;
 }
 
 double Statistics::EstimateTuples(struct OrList *orList, map<string,long> &uniqueValueList)
