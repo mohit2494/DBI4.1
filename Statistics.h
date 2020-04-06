@@ -16,11 +16,12 @@ using namespace std;
 class Statistics
 {
 private:
-    map<string,RelStats*> statsMaps;
+    map<string,RelStats*> statsMap;
 public:
     Statistics();
-    Statistics(Statistics &copyMe);	 // Performs deep copy
     ~Statistics();
+    map<string,RelStats*>* GetStatsMap();
+    Statistics(Statistics &copyMe);	 // Performs deep copy
     void AddRel(char *relName, int numTuples);
     void AddAtt(char *relName, char *attName, int numDistincts);
     void CopyRel(char *oldName, char *newName);
@@ -32,11 +33,5 @@ public:
     double Estimate(struct AndList *parseTree, char **relNames, int numToJoin);
     double Evaluate(struct OrList *orList, map<string,long> &uniqvallist);
     void printRelsAtts();
-    //getter methods
-    map<string,RelStats*>* GetDbStats()
-    {
-    return &dbStats;
-    }
-
 };
 #endif

@@ -11,9 +11,9 @@ class RelStats{
     int groupSize;
     map<string,int> attributeMap;
 public:
-    RelStats(int noOfTuples, string groupName){
-        this.noOfTuples = noOfTuples;
-        this.groupName = groupName;
+    RelStats(int numTuples, string relName){
+        this.noOfTuples = numTuples;
+        this.groupName = relName;
         this.groupSize = 1;
     }
     ~RelStats(){
@@ -22,7 +22,7 @@ public:
     
     RelStats(RelStats &copyMe){
         this.noOfTuples = copyMe.GetNofTuples();
-        map<string,int> * ptr = copyMe.GetRelationAtts();
+        map<string,int> * ptr = copyMe.GetRelationAttributes();
         map<string,int>::iterator itr;
         
         for( itr = ptr->begin(); itr!=ptr->end(); itr++)
@@ -42,7 +42,7 @@ public:
     {
         return groupSize;
     }
-    map<string,int> * GetRelationAtts()
+    map<string,int> * GetRelationAttributes()
     {
         return &attributeMap;
     }
@@ -52,10 +52,22 @@ public:
     }
 
 // Setter Functions
-    void SetGroupDetails(string grpname,int grpcnt)
+    void UpdateNoOfTuples(int numTuples)
     {
-        groupName = grpname;
-        groupSize = grpcnt;
+        this.noOfTuples = numTuples;
+    }
+
+    void UpdateAttributes(string attName,int numDistincts)
+    {   if (numDistincts == -1){
+            numDistincts = noOfTuples;
+        }
+        this.attributeMap[attName] = numDistincts;
+    }
+    
+    void UpdateGroup(string groupName,int groupCount)
+    {
+        this.groupName = groupName;
+        this.groupSize = groupCount;
     }
     
 }
