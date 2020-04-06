@@ -105,10 +105,10 @@ void Statistics::CopyRel(char *oldName, char *newName)
 
   if(itr!=dbStats.end())
   {
-      RelStats* newTable=new RelStats(dbStats[string(oldName)]->GetTupleCount(),newRel);
+      RelStats* newTable=new RelStats(dbStats[string(oldName)]->fetchNumberOfTuples(),newRel);
       tbptr=dbStats[oldRel];
-      map<string,int>::iterator tableiter=tbptr->GetTableAtts()->begin();
-      for(;tableiter!=tbptr->GetTableAtts()->end();tableiter++)
+      map<string,int>::iterator tableiter=tbptr->fetchTableAttributes()->begin();
+      for(;tableiter!=tbptr->fetchTableAttributes()->end();tableiter++)
       {
           string temp=newRel+"."+tableiter->first;
           newTable->UpdateData(temp,tableiter->second);
@@ -156,35 +156,39 @@ void Statistics::Read(char *fromWhere)
     }
 }
 
+/*
+    function for printing the statistics data structure into statistic.txt
+    details will be printed according to the relation, numOfTuples, numOfDistinctValues
+*/
 void Statistics::Write(char *fromWhere)
 {
-    /*Logic:
-     Iterate over the dBStats HashMaps, for each entry(relation) iterate over
-     attribs HashMaps to print the numOfTuples, and numOfDistinctValues respectivily
-     */
+    map<string,int> *ap;
+    map<string,RelStats*>::iterator mi;
+    map<string,int>::iterator ti;
 
-     map<string,RelStats*>::iterator dbitr;
-     map<string,int>::iterator tbitr;
-     map<string,int> *attrptr;
+    FILE *fptr;
+    fptr = fopen(fromWhere,"w");
+    
+     
+    for(mi = dbStats.begin();mi!=dbStats.end();mi++) {
+        fprintf(fptr,"BEGIN\n");
 
-     FILE *fptr;
-     fptr = fopen(fromWhere,"w");
-     dbitr = dbStats.begin();
+        long int tc = mi->second->fetchNumberOfTuples();
+        const char * rn = mi->first.c_str();
+        const char * gn = strdup(mi->second->fetchGroupName().c_str());
+        int gz = mi->second->fetchGroupSize();
+        fprintf(fptr,"%s %ld %s %d\n",rn,tc,gn,gz);
 
-     for(;dbitr!=dbStats.end();dbitr++)
-     {
-         fprintf(fptr,"BEGIN\n");
-         fprintf(fptr,"%s %ld %s %d\n",dbitr->first.c_str(),dbitr->second->GetTupleCount(),dbitr->second->GetGrpName().c_str(),dbitr->second->GetGrpSize());
-         attrptr = dbitr->second->GetTableAtts();
-         tbitr = attrptr->begin();
+        ap = mi->second->fetchTableAttributes();
+        for(ti = ap->begin();ti!=ap->end();ti++) {
+            const char *f = strdup(ti->first.c_str());
+            int s = ti->second;
+            fprintf(fptr,"%s %d\n",ti->first.c_str(),ti->second);
+        }  
 
-         for(;tbitr!=attrptr->end();tbitr++)
-         {
-            fprintf(fptr,"%s %d\n",tbitr->first.c_str(),tbitr->second);
-         }
-         fprintf(fptr,"END\n");
-     }
-     fclose(fptr);
+        fprintf(fptr,"END\n");      
+    }
+    fclose(fptr);  
 }
 
 void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin)
@@ -220,7 +224,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
 
     double estTuples=1;
     map<string,long> uniqvallist;
-    if(!ErrorCheck(parseTree,relNames,numToJoin,uniqvallist))
+    if(!checkParseTreeAndPartition(parseTree,relNames,numToJoin,uniqvallist))
     {
       cout<<"\nClass:Statistics Method:Estimate Msg:Input Parameters invalid for Estimation";
       return -1.0;
@@ -237,7 +241,7 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
       }
       for(int i=0;i<numToJoin;i++)
       {
-          tuplevals[dbStats[relNames[i]]->GetGrpName()]=dbStats[relNames[i]]->GetTupleCount();
+          tuplevals[dbStats[relNames[i]]->fetchGroupName()]=dbStats[relNames[i]]->fetchNumberOfTuples();
       }
 
       estTuples = 1000.0; //Safety purpose so that we dont go out of Double precision
@@ -307,7 +311,7 @@ double Statistics::Evaluate(struct OrList *orList, map<string,long> &uniqvallist
     return (1.0-selectivity);
 }
 
-bool Statistics::ErrorCheck(struct AndList *parseTree, char *relNames[], int numToJoin,map<string,long> &uniqvallist)
+bool Statistics::checkParseTreeAndPartition(struct AndList *parseTree, char *relNames[], int numToJoin,map<string,long> &uniqvallist)
 {
     /*
      Logic:
@@ -322,40 +326,41 @@ bool Statistics::ErrorCheck(struct AndList *parseTree, char *relNames[], int num
       while(head!=NULL && result)
       {
           struct ComparisonOp *ptr = head->left;
-          if(ptr->left->code==4 && ptr->code==3 && !ContainsAttrib(ptr->left->value,relNames,numToJoin,uniqvallist))
+          if(ptr->left->code==4 && ptr->code==3 && !CheckForAttribute(ptr->left->value,relNames,numToJoin,uniqvallist))
           {
               cout<<"\n"<< ptr->left->value<<" Does Not Exist";
               result=false;
           }
-         if(ptr->right->code==4 && ptr->code==3 && !ContainsAttrib(ptr->right->value,relNames,numToJoin,uniqvallist))
+         if(ptr->right->code==4 && ptr->code==3 && !CheckForAttribute(ptr->right->value,relNames,numToJoin,uniqvallist))
               result=false;
        head=head->rightOr;
       }
       parseTree=parseTree->rightAnd;
   }
+
   if(!result) return result;
 
   map<string,int> tmpTable;
   for(int i=0;i<numToJoin;i++)
   {
-      string grpname = dbStats[string(relNames[i])]->GetGrpName();
+      string grpname = dbStats[string(relNames[i])]->fetchGroupName();
       if(tmpTable.find(grpname)!=tmpTable.end())
           tmpTable[grpname]--;
       else
-          tmpTable[grpname] = dbStats[string(relNames[i])]->GetGrpSize()-1;
+          tmpTable[grpname] = dbStats[string(relNames[i])]->fetchGroupSize()-1;
   }
 
   map<string,int>::iterator tmpTableItr = tmpTable.begin();
   for(;tmpTableItr!=tmpTable.end();tmpTableItr++)
       if(tmpTableItr->second!=0)
-         {
+        {
           result=false;
           break;
         }
   return result;
 }
 
-bool Statistics::ContainsAttrib(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist)
+bool Statistics::CheckForAttribute(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist)
 {
     int i=0;
     while(i<numToJoin)
@@ -364,9 +369,9 @@ bool Statistics::ContainsAttrib(char *value,char *relNames[], int numToJoin,map<
     if(itr!=dbStats.end())
      {
         string key = string(value);
-        if(itr->second->GetTableAtts()->find(key)!=itr->second->GetTableAtts()->end())
+        if(itr->second->fetchTableAttributes()->find(key)!=itr->second->fetchTableAttributes()->end())
         {
-            uniqvallist[key]=itr->second->GetTableAtts()->find(key)->second;
+            uniqvallist[key]=itr->second->fetchTableAttributes()->find(key)->second;
             return true;
         }
      }

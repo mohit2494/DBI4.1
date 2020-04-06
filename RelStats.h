@@ -32,9 +32,9 @@ public:
     RelStats(RelStats &copyMe)
     {
 
-         noOfTuples = copyMe.GetTupleCount();
+         noOfTuples = copyMe.fetchNumberOfTuples();
        //  relnoOfTuples = copyMe.GetRelTupleCount();
-         map<string,int> *ptr = copyMe.GetTableAtts();
+         map<string,int> *ptr = copyMe.fetchTableAttributes();
          map<string,int>::iterator itr;
          for(itr = ptr->begin();itr!=ptr->end();itr++)
          {
@@ -62,11 +62,11 @@ public:
         attribs[s] = num_distinct;
     }
     //getter method
-    map<string,int> * GetTableAtts()
+    map<string,int> * fetchTableAttributes()
     {
         return &attribs;
     }
-    long GetTupleCount()
+    long fetchNumberOfTuples()
     {
         return noOfTuples;
     }
@@ -74,11 +74,11 @@ public:
     {
         return relnoOfTuples;
     }*/
-    string GetGrpName()
+    string fetchGroupName()
     {
         return groupName;
     }
-    int GetGrpSize()
+    int fetchGroupSize()
     {
         return groupSize;
     }
@@ -88,6 +88,4 @@ public:
         groupSize = grpcnt;
     }
 };
-
-
 #endif
