@@ -382,24 +382,31 @@ bool Statistics::checkParseTreeAndPartition(struct AndList *tree, char *relation
     return returnValue;
 }
 
-bool Statistics::CheckForAttribute(char *value,char *relNames[], int numToJoin,map<string,long> &uniqvallist)
+/*
+ *  Function checks whether given attributes belong to relations in relation list or not
+*/
+bool Statistics::CheckForAttribute(char *v,char *relationNames[], int numberOfJoinAttributes,map<string,long> &uniqueValueList)
 {
     int i=0;
-    while(i<numToJoin)
+    while(i<numberOfJoinAttributes)
     {
-    map<string,RelStats*>::iterator itr=dbStats.find(relNames[i]);
-    if(itr!=dbStats.end())
-     {
-        string key = string(value);
-        if(itr->second->fetchTableAttributes()->find(key)!=itr->second->fetchTableAttributes()->end())
-        {
-            uniqvallist[key]=itr->second->fetchTableAttributes()->find(key)->second;
-            return true;
+        map<string,RelStats*>::iterator itr=dbStats.find(relationNames[i]);
+        // if stats are not empty
+        if(itr!=dbStats.end())
+        {   
+            string relation = string(v);
+            if(itr->second->fetchTableAttributes()->find(relation)!=itr->second->fetchTableAttributes()->end())
+            {
+                // update value in uniqueValueList
+                uniqueValueList[relation]=itr->second->fetchTableAttributes()->find(relation)->second;
+                return true;
+            }
         }
-     }
-    else
-        return false;
-    i++;
+        else {
+            // empty stats
+            return false;
+        }
+        i++;
     }
     return false;
 }
