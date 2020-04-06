@@ -1,11 +1,8 @@
 BEGIN
-lineitem 21433 ,part,lineitem 2
-l_partkey 200000
-l_shipinstruct 4
-l_shipmode 7
+partsupp 800000 ,supplier,partsupp 2
+ps_suppkey 10000
 END
 BEGIN
-part 21433 ,part,lineitem 2
-p_container 40
-p_partkey 200000
+supplier 800000 ,supplier,partsupp 2
+s_suppkey 10000
 END
